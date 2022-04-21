@@ -39,6 +39,7 @@ class LifecyclePlugin extends Transform implements Plugin<Project> {
         return TransformManager.CONTENT_CLASS
     }
 
+    // 指定Transform的作用范围
     @Override
     Set<? super QualifiedContent.Scope> getScopes() {
         return TransformManager.SCOPE_FULL_PROJECT
@@ -53,18 +54,21 @@ class LifecyclePlugin extends Transform implements Plugin<Project> {
     void transform(@NonNull TransformInvocation transformInvocation) {
         println '--------------- LifecyclePlugin visit start --------------- '
         def startTime = System.currentTimeMillis()
+        //拿到所有的class文件
         Collection<TransformInput> inputs = transformInvocation.inputs
         TransformOutputProvider outputProvider = transformInvocation.outputProvider
         //删除之前的输出
         if (outputProvider != null)
             outputProvider.deleteAll()
-        //遍历inputs
+        //遍历inputs Transform的inputs有两种类型，一种是目录，一种是jar包，要分开遍历
         inputs.each { TransformInput input ->
+            println '--------------- start each  directory--------------- '
             //遍历directoryInputs
             input.directoryInputs.each { DirectoryInput directoryInput ->
                 handleDirectoryInput(directoryInput, outputProvider)
             }
 
+            println '--------------- start each  jar file--------------- '
             //遍历jarInputs
             input.jarInputs.each { JarInput jarInput ->
                 handleJarInputs(jarInput, outputProvider)
@@ -164,9 +168,23 @@ class LifecyclePlugin extends Transform implements Plugin<Project> {
      */
     static boolean checkClassFile(String name) {
         //只处理需要的class文件
+
+        println '----------- checkClassFile = ' + name + ' -----------'
+        if (name == null) return false
+        if ("".equals(name)) return false
+        if ("BuildConfig.class".equals(name)) return false
+        if(name.contains("R\$"))return false
+        if(name.contains("R.class"))return false
+        if(name.contains("META-INF"))return false
+
+        if ("BaseActivity.class".equals(name)) return true
+
         return (name.endsWith(".class") && !name.startsWith("R\$")
                 && !"R.class".equals(name) && !"BuildConfig.class".equals(name)
-                && "android/support/v4/app/FragmentActivity.class".equals(name))
+                &&
+                ("androidx/fragment/app/FragmentActivity.class".equals(name)
+                        || "MainActivity.class".equals(name))
+        )
     }
 
 }
