@@ -3,7 +3,6 @@ buildscript {
     
     repositories {
         google()
-        jcenter()
         maven {
             url uri('./lifecycle-plugin/my-plugin')
         }
@@ -20,7 +19,6 @@ buildscript {
 allprojects {
     repositories {
         google()
-        jcenter()
     }
 }
 

@@ -57,9 +57,11 @@ class LifecyclePlugin extends Transform implements Plugin<Project> {
         //拿到所有的class文件
         Collection<TransformInput> inputs = transformInvocation.inputs
         TransformOutputProvider outputProvider = transformInvocation.outputProvider
-        //删除之前的输出
-        if (outputProvider != null)
-            outputProvider.deleteAll()
+
+        if (!isIncremental()) { //不是增量编译
+            if (outputProvider != null)
+                outputProvider.deleteAll()  //删除之前的输出
+        }
         //遍历inputs Transform的inputs有两种类型，一种是目录，一种是jar包，要分开遍历
         inputs.each { TransformInput input ->
             println '--------------- start each  directory--------------- '
@@ -68,11 +70,13 @@ class LifecyclePlugin extends Transform implements Plugin<Project> {
                 handleDirectoryInput(directoryInput, outputProvider)
             }
 
+            //不处理jar文件
             println '--------------- start each  jar file--------------- '
             //遍历jarInputs
             input.jarInputs.each { JarInput jarInput ->
                 handleJarInputs(jarInput, outputProvider)
             }
+
         }
         def cost = (System.currentTimeMillis() - startTime) / 1000
         println '--------------- LifecyclePlugin visit end --------------- '
@@ -92,7 +96,7 @@ class LifecyclePlugin extends Transform implements Plugin<Project> {
                     println '----------- deal with "class" file <' + name + '> -----------'
                     ClassReader classReader = new ClassReader(file.bytes)
                     ClassWriter classWriter = new ClassWriter(classReader, ClassWriter.COMPUTE_MAXS)
-                    ClassVisitor cv = new LifecycleClassVisitor(classWriter)
+                    ClassVisitor cv = new LifecycleClassVisitor(classWriter) //本质ClassVisitor
                     classReader.accept(cv, EXPAND_FRAMES)
                     byte[] code = classWriter.toByteArray()
                     FileOutputStream fos = new FileOutputStream(
@@ -106,6 +110,7 @@ class LifecyclePlugin extends Transform implements Plugin<Project> {
         def dest = outputProvider.getContentLocation(directoryInput.name,
                 directoryInput.contentTypes, directoryInput.scopes,
                 Format.DIRECTORY)
+        println 'directoryInput.file = ' + directoryInput.file + ', dest = ' + dest
         FileUtils.copyDirectory(directoryInput.file, dest)
     }
 
@@ -168,23 +173,20 @@ class LifecyclePlugin extends Transform implements Plugin<Project> {
      */
     static boolean checkClassFile(String name) {
         //只处理需要的class文件
-
         println '----------- checkClassFile = ' + name + ' -----------'
         if (name == null) return false
         if ("".equals(name)) return false
         if ("BuildConfig.class".equals(name)) return false
-        if(name.contains("R\$"))return false
-        if(name.contains("R.class"))return false
-        if(name.contains("META-INF"))return false
+        if (name.contains("R\$")) return false
+        if (name.contains("R.class")) return false
+        if (name.contains("META-INF")) return false
+        if (name.contains("\$")) return false
+        if (!name.endsWith(".class")) return false
 
-        if ("BaseActivity.class".equals(name)) return true
-
-        return (name.endsWith(".class") && !name.startsWith("R\$")
-                && !"R.class".equals(name) && !"BuildConfig.class".equals(name)
-                &&
-                ("androidx/fragment/app/FragmentActivity.class".equals(name)
-                        || "MainActivity.class".equals(name))
-        )
+        if ("androidx/fragment/app/FragmentActivity.class".equals(name)) return true
+        if ("MainActivity.class".equals(name)) return true
+        if ("SecondActivity.class".equals(name)) return true
+        return false
     }
 
 }

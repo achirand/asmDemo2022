@@ -3,8 +3,12 @@ package com.gavin.asmdemo;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 
-public class MainActivity extends BaseActivity {
+import androidx.annotation.Keep;
+import androidx.appcompat.app.AppCompatActivity;
+
+public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -12,7 +16,6 @@ public class MainActivity extends BaseActivity {
         setContentView(R.layout.activity_main);
         Log.i("TAG", "MainActivity中的onCreate");
         testPara("para");
-        //openSecondActivity();
     }
 
     public void testPara(String para) {
@@ -25,7 +28,7 @@ public class MainActivity extends BaseActivity {
         super.onDestroy();
     }
 
-    public void openSecondActivity() {
+    public void openSecondActivity(View view) {
         Intent intent = new Intent(this, SecondActivity.class);
         startActivity(intent);
     }

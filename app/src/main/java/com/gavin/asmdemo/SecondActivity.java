@@ -2,7 +2,9 @@ package com.gavin.asmdemo;
 
 import android.os.Bundle;
 
-public class SecondActivity extends BaseActivity {
+import androidx.appcompat.app.AppCompatActivity;
+
+public class SecondActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
